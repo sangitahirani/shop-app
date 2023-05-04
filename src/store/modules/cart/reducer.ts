@@ -4,7 +4,7 @@ export const initialState = {
   cart: [], //Initial state of the cart
 };
 import {ICart, IProduct, ICartState} from '../../../types';
-import {Alert} from 'react-native';
+import {Alert, Platform, ToastAndroid} from 'react-native';
 export const CartData = createSlice({
   name: 'cartData',
   initialState: initialState,
@@ -17,8 +17,11 @@ export const CartData = createSlice({
       } else {
         state.cart = [item, ...state.cart];
       }
-      // Alert.alert(JSON.stringify(state.cart));
-      // state.cart = [...state.cart, action.payload];
+      if (Platform.OS === 'android') {
+        ToastAndroid.show('Added to cart..', ToastAndroid.SHORT);
+      } else {
+        Alert.alert('Added to cart..');
+      }
     },
     removeCartItem: (state: ICart, action: PayloadAction<number>) => {
       const {payload} = action;

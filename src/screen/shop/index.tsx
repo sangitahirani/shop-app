@@ -1,45 +1,35 @@
-import {View, Text, Image, FlatList, Alert} from 'react-native';
-
-import 'intl';
-import 'intl/locale-data/jsonp/en';
-
+import {View, Text, FlatList, ActivityIndicator} from 'react-native';
 import {useDispatch} from 'react-redux';
 import {addNewItem} from '../../store/modules/cart/reducer';
 import {IProduct} from '../../types/index';
-import {
-  Container,
-  ListContainer,
-  Wrapper,
-  CardProduct,
-  ImageContainer,
-  Content,
-  Title,
-  Brand,
-  Price,
-} from './styles';
-import {Button} from '../../components/Button';
+import {Container, ListContainer, Title, Wrapper} from './styles';
 import {Cart} from '../../components/Cart';
-import axios from 'axios';
 import {useEffect, useState} from 'react';
+import {getProducts} from '../../api/api';
+import {ProductItem} from './ProductItem';
+
 export const Shop = () => {
   const dispatch = useDispatch();
   const [products, setProducts] = useState();
+  const [error, setError] = useState(false);
 
   const addCartNewItem = (item: IProduct) => {
     dispatch(addNewItem({...item, quantity: 1}));
-    //dispatch calls the action method
   };
-  const getProducts = () => {
-    axios
-      .get(`https://my-json-server.typicode.com/benirvingplt/products/products`)
-      .then(response => {
-        console.log(response.data);
-        setProducts(response.data);
+
+  //Products API Call
+  const getProductsApi = async () => {
+    await getProducts()
+      .then(res => {
+        setProducts(res);
+      })
+      .catch(() => {
+        setError(true);
       });
   };
 
   useEffect(() => {
-    getProducts();
+    getProductsApi();
   }, []);
   return (
     <Container>
@@ -56,43 +46,27 @@ export const Shop = () => {
         <ListContainer>
           <Cart />
           <View style={{marginTop: 15}}>
-            <FlatList
-              data={products}
-              keyExtractor={(item: any) => item.id}
-              showsVerticalScrollIndicator={false}
-              numColumns={2}
-              renderItem={({item}) => (
-                <CardProduct>
-                  <ImageContainer>
-                    <Image
-                      style={{
-                        height: 100,
-                        width: 80,
-                        top: 20,
-                        left: 0,
-                        right: 0,
-                      }}
-                      source={{uri: item.img}}
-                    />
-                  </ImageContainer>
-                  <Content>
-                    <Title numberOfLines={2}>{item.name}</Title>
-                    <Price>
-                      {Intl.NumberFormat('en-US', {
-                        style: 'currency',
-                        currency: 'USD',
-                      }).format(item.price)}
-                    </Price>
-
-                    <Button
-                      title="Add cart"
-                      icon="plus-circle"
-                      onPress={() => addCartNewItem(item)}
-                    />
-                  </Content>
-                </CardProduct>
-              )}
-            />
+            {error ? (
+              <Title>Unable to fetch data</Title>
+            ) : (
+              <FlatList
+                data={products}
+                keyExtractor={(item: any) => item.id}
+                showsVerticalScrollIndicator={false}
+                numColumns={2}
+                ListEmptyComponent={() => {
+                  return <ActivityIndicator />;
+                }}
+                renderItem={({item}) => (
+                  <ProductItem
+                    item={item}
+                    addCartNewItem={(item: IProduct) => {
+                      addCartNewItem(item);
+                    }}
+                  />
+                )}
+              />
+            )}
           </View>
         </ListContainer>
       </Wrapper>
